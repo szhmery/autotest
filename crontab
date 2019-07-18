@@ -1,0 +1,1 @@
+0 */1 * * * ~/zhaohsun/autotest/restart_epc.sh > epc.log
