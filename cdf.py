@@ -44,7 +44,7 @@ class CloseToOne(mscale.ScaleBase):
         return self.Transform(self.nines)
 
     def set_default_locators_and_formatters(self, axis):
-        axis.set_major_formatter(FixedLocator(
+        axis.set_major_locator(FixedLocator(
             np.array([1 - 10 ** (-k) for k in range(1 + self.nines)])))
         axis.set_major_formatter(FixedFormatter(
             [str(1 - 10 ** (-k)) for k in range(1 + self.nines)]))
@@ -189,8 +189,8 @@ class Statistic():
         else:
             print("%s not found" % latencyFileName)
 
-    def draw_cdf(self, enableLatencyFileName, disableLatencyFileName, title, latencyPlotName):
-
+    def draw_cdf(self, enableLatencyFileName, disableLatencyFileName, title, latencyPlotName, type):
+        # axis_name = fig.add_subplot(subplotNumber)
         self.draw_cdf_plot(disableLatencyFileName, 0)
         self.draw_cdf_plot(enableLatencyFileName, 1)
 
@@ -198,9 +198,19 @@ class Statistic():
         plt.grid(b=True, which='minor', color='r', linestyle='-', alpha=0.2)
 
         ax = plt.gca()
-        plt.yscale('close_to_one')
-        ax.grid(b=True, which='minor', color='b', linestyle='-')
-        #ax.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
+        if type=="log":
+            plt.yscale('close_to_one')
+
+            # plt.yscale('log')
+
+        # ax.grid(b=True, which='minor', linestyle='-',axis="y")
+        plt.minorticks_on()
+        minor_ticks = np.arange(0, 1, 0.05)
+        ax.set_yticks(minor_ticks, minor=True)
+        # ax.yaxis.get_ticklocs(minor=True)
+        # plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
+        # plt.grid(b=True, which='minor', color='r', linestyle='--')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         plt.xlabel('Latency (ms) ')
         plt.title(title, size=9)
         plt.ylabel("Percentile")
@@ -210,66 +220,239 @@ class Statistic():
 
         print "save file : " + latencyPlotName
         plt.savefig(latencyPlotName, format='pdf')
-        plt.close()
+        # plt.close()
 
 
+    def draw_multiple_subplots(self,type):
+        fig = plt.figure(figsize=(12, 10))
+        plt.subplot(2, 2, 1)
+
+        # case 1, 101_102
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0713_101_2.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_912_102.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency w/ and w/o BWR under no Traffic Load",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_101_102.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under no Traffic Load",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_101_102.pdf",type)
+
+        plt.subplot(2, 2, 2)
+        # case 2, 201_202
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_201.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_202.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency w/ and w/o BWR under Low Traffic Load (20%)",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_201_202.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Low Traffic Load (20%)",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_201_202.pdf",type)
+        plt.subplot(2, 2, 3)
+        # case 3, 301_302
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_301.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_302_3.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_301_302.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_301_302.pdf",type)
+        plt.subplot(2, 2, 4)
+
+        # case 5, 401_402
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_401.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_402.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency under High Traffic Load (70%) w/o REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_401_402.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_401_402.pdf",type)
+        fig.tight_layout()
+        print "save all of plots to rate-multipleplots.pdf"
+        fig.savefig("/root/zhaohsun/autotest/"+type+"/"+type+"_rate_multipleplots.pdf")
+
+        fig2 = plt.figure(figsize=(12, 10))
+        plt.subplot(2, 2, 1)
+        # case 3, 301_302
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_301.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_302_3.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_301_302.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_301_302.pdf",type)
+
+        plt.subplot(2, 2, 2)
+        # case 4, 303_304
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0717_927_303.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_304_1.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/ REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_303_304.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/ REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_303_304.pdf",type)
+        plt.subplot(2, 2, 3)
+        # case 5, 401_402
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_401.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_402.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency under High Traffic Load (70%) w/o REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_401_402.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_401_402.pdf",type)
+        plt.subplot(2, 2, 4)
+        # case 6, 403_404
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0715_927_403.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0715_927_404.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency under High Traffic Load (70%) with REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_403_404.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_403_404.pdf",type)
+
+        fig2.tight_layout()
+        print "save all of plots to contetion-multipleplots.pdf"
+        fig2.savefig("/root/zhaohsun/autotest/"+type+"/"+type+"_contetion_multipleplots.pdf")
+
+        fig3 = plt.figure(figsize=(12, 10))
+        plt.subplot(2, 2, 1)
+        # case 5, 401_402
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_401.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_402.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency under High Traffic Load (70%) w/o REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_401_402.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_401_402.pdf",type)
+
+        plt.subplot(2, 2, 2)
+        # case 6, 403_404
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0715_927_403.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0715_927_404.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "US Latency under High Traffic Load (70%) with REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_403_404.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_403_404.pdf",type)
+
+        plt.subplot(2, 2, 3)
+        # case 7, 405_406
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_high_qos_ping_500_005_0718_927_405.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_high_qos_ping_500_005_0718_927_406.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "High Priority US Latency under High Traffic Load (70%) w/o REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_405_406.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "High Priority US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_405_406.pdf",type)
+
+        plt.subplot(2, 2, 4)
+        # case 8, 407_408
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_high_qos_ping_500_005_0718_927_407.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_high_qos_ping_500_005_0718_927_408.txt'
+        # Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+        #                      "High Priority US Latency under High Traffic Load (70%) with REQ Contention",
+        #                      "/root/zhaohsun/autotest/pdf/mbwr_pdf_407_408.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "High Priority US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_407_408.pdf",type)
+        fig3.tight_layout()
+        print "save all of plots to priority-multipleplots.pdf"
+        fig3.savefig("/root/zhaohsun/autotest/"+type+"/"+type+"_priority_multipleplots.pdf")
+
+    def draw_seperate_plots(self,type):
+        # case 1, 101_102
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0713_101_2.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_912_102.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under no Traffic Load",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_101_102.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under no Traffic Load",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_101_102.pdf", type)
+
+        # case 2, 201_202
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_201.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_202.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Low Traffic Load (20%)",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_201_202.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Low Traffic Load (20%)",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_201_202.pdf", type)
+
+        # case 3, 301_302
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_301.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_302_3.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_301_302.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_301_302.pdf", type)
+
+        # case 4, 303_304
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0717_927_303.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_304_1.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/ REQ Contention",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_303_304.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/ REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_303_304.pdf", type)
+
+        # case 5, 401_402
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_401.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_402.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_401_402.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_401_402.pdf", type)
+
+        # case 6, 403_404
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0715_927_403.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0715_927_404.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_403_404.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_403_404.pdf", type)
+
+        # case 7, 405_406
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_high_qos_ping_500_005_0718_927_405.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_high_qos_ping_500_005_0718_927_406.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "High Priority US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_405_406.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "High Priority US Latency under High Traffic Load (70%) w/o REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_405_406.pdf", type)
+
+        # case 8, 407_408
+        disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_high_qos_ping_500_005_0718_927_407.txt'
+        enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_high_qos_ping_500_005_0718_927_408.txt'
+        Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
+                             "High Priority US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/pdf/mbwr_pdf_407_408.pdf")
+        Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
+                             "High Priority US Latency under High Traffic Load (70%) with REQ Contention",
+                             "/root/zhaohsun/autotest/"+type+"/"+type+"_mbwr_cdf_407_408.pdf", type)
+
+        print "Draw seperate plots successfully!"
+        
 if __name__ == "__main__":
-    # case 1, 101_102
-    disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0713_101_2.txt'
-    enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_912_102.txt'
-    Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under no Traffic Load",
-                         "mbwr_pdf_101_102.pdf")
-    Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under no Traffic Load",
-                         "mbwr_cdf_101_102_2.pdf")
 
-    # case 2, 201_202
-    disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_201.txt'
-    enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_202.txt'
-    Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under Low Traffic Load (20%)",
-                         "mbwr_pdf_201_202.pdf")
-    Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under Low Traffic Load (20%)",
-                         "mbwr_cdf_201_202.pdf")
-
-    # case 3, 301_302
-    disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_301.txt'
-    enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_302_3.txt'
-    Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
-                         "mbwr_pdf_301_302.pdf")
-    Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/o REQ Contention",
-                         "mbwr_cdf_301_302.pdf")
-
-    # case 4, 303_304
-    disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0717_927_303.txt'
-    enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0717_927_304_1.txt'
-    Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/ REQ Contention",
-                         "mbwr_pdf_303_304.pdf")
-    Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under Medium Traffic Load (40%) w/ REQ Contention",
-                         "mbwr_cdf_303_304.pdf")
-
-    # case 5, 401_402
-    disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0714_927_401.txt'
-    enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0714_927_402.txt'
-    Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under High Traffic Load (70%) w/o REQ Contention",
-                         "mbwr_pdf_401_402.pdf")
-    Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under High Traffic Load (70%) w/o REQ Contention",
-                         "mbwr_cdf_401_402.pdf")
-
-    # case 6, 403_404
-    disable_mbwr_file = '/root/zhaohsun/cdf/disable_mbwr_ping_500_005_0715_927_403.txt'
-    enable_mbwr_file = '/root/zhaohsun/cdf/enable_mbwr_ping_500_005_0715_927_404.txt'
-    Statistic().draw_pdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under High Traffic Load (70%) w/ REQ Contention",
-                         "mbwr_pdf_403_404.pdf")
-    Statistic().draw_cdf(enable_mbwr_file, disable_mbwr_file,
-                         "US Latency w/ and w/o BWR under High Traffic Load (70%) w/ REQ Contention",
-                         "mbwr_cdf_403_404.pdf")
+    Statistic().draw_seperate_plots("log")
+    Statistic().draw_seperate_plots("linear")
+    # Statistic().draw_multiple_subplots("log")
+    # Statistic().draw_multiple_subplots("linear")
